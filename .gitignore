@@ -1,0 +1,44 @@
+# Operating-system and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# Python caches, environments, and build products
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Secrets and local configuration
+.env
+.env.*
+*.pem
+*.key
+credentials*.json
+
+# Large/local network inputs; retain schema documentation only
+data/*
+!data/README.md
+
+# Large node-level or temporary outputs
+outputs/exposure_table.csv
+outputs/smoke/
+outputs/tmp/
+outputs/*.npy
+outputs/*.npz
+outputs/*.pkl
+*.log
+*.tmp
+*.temp
