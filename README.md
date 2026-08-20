@@ -14,12 +14,15 @@ diffusion across different empirical network structures?
 
 ## Relation to the Nature Communications paper
 
-This repository is a standalone Python research companion to the associated
-*Nature Communications* paper ([DOI: 10.1038/s41467-026-73665-1](https://doi.org/10.1038/s41467-026-73665-1)).
-It develops a small data-driven parameter-recovery and intervention layer around
-the paper's normalized-threshold complex-contagion setting. It does **not**
-contain, modify, or redistribute the paper's original C++ simulation project.
+This repository is a standalone Python research companion to:
 
+> **Community structure-regulation coupling reveals optimal information diffusion**  
+> *Nature Communications* **17**, 4879 (2026).  
+> https://doi.org/10.1038/s41467-026-73665-1
+
+Xiaojie Chen and Meiling Xie contributed equally to the associated publication.
+
+This repository does not contain, modify, or redistribute the paper’s original C++ simulation code.
 > **Current experiments use synthetic cascades generated on empirical network
 > topologies. They do not estimate causal effects from observed platform data.**
 
