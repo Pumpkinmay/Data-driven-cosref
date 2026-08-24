@@ -8,6 +8,7 @@ Thumbs.db
 
 # Python caches, environments, and build products
 __pycache__/
+.ipynb_checkpoints/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
@@ -28,17 +29,38 @@ env/
 *.key
 credentials*.json
 
-# Large/local network inputs; retain schema documentation only
-data/*
+# Large/local inputs and generated row-level data; retain schema documentation only
+data/raw/
+data/processed/
+data/edges_*.csv
+data/community_*.csv
 !data/README.md
+*.csv.gz
+*.parquet
+*.pkl
+*.joblib
 
 # Large node-level or temporary outputs
-outputs/exposure_table.csv
+outputs/exposure_table*
 outputs/smoke/
 outputs/tmp/
 outputs/*.npy
 outputs/*.npz
-outputs/*.pkl
+
+# Keep local Digg provenance, publish only the curated final subset.
+outputs/digg/*
+!outputs/digg/README.md
+!outputs/digg/controlled_model_coefficients.csv
+!outputs/digg/controlled_model_report.md
+!outputs/digg/controlled_coefficient_plot.png
+!outputs/digg/leakage_audit.md
+!outputs/digg/xgb_group_cv_metrics.csv
+!outputs/digg/xgb_group_cv_summary.md
+!outputs/digg/xgb_group_cv_plot.png
+!outputs/digg/final_model_metrics.csv
+!outputs/digg/final_calibration.png
+!outputs/digg/xgb_shap_summary.png
+
 *.log
 *.tmp
 *.temp

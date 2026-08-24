@@ -51,6 +51,15 @@ class FitResult:
     iterations: int
 
 
+def effective_parameters(
+    coef_m_in: float, coef_m_out: float, coef_degree: float, beta: float
+) -> tuple[float, float, float]:
+    """Map raw count-logit coefficients to the fixed-beta parameter scale."""
+    if beta <= 0:
+        raise ValueError("beta must be positive")
+    return coef_m_in / beta, coef_m_out / beta, -coef_degree / beta
+
+
 def read_communities(path: Path) -> dict[int, int]:
     labels: dict[int, int] = {}
     with path.open(newline="", encoding="utf-8-sig") as handle:
@@ -342,14 +351,17 @@ def fit_parameters(features: np.ndarray, outcomes: np.ndarray, beta: float) -> F
     )
     model.fit(features, outcomes)
     coef_m_in, coef_m_out, coef_degree = (float(value) for value in model.coef_[0])
+    a_hat, b_hat, theta_hat = effective_parameters(
+        coef_m_in, coef_m_out, coef_degree, beta
+    )
     return FitResult(
         raw_coef_m_in=coef_m_in,
         raw_coef_m_out=coef_m_out,
         raw_coef_degree=coef_degree,
         intercept=float(model.intercept_[0]),
-        a_hat=coef_m_in / beta,
-        b_hat=coef_m_out / beta,
-        theta_hat=-coef_degree / beta,
+        a_hat=a_hat,
+        b_hat=b_hat,
+        theta_hat=theta_hat,
         iterations=int(model.n_iter_[0]),
     )
 
