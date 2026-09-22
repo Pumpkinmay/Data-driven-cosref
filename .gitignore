@@ -60,6 +60,9 @@ outputs/digg/*
 !outputs/digg/final_model_metrics.csv
 !outputs/digg/final_calibration.png
 !outputs/digg/xgb_shap_summary.png
+!outputs/digg/gnn_metrics.csv
+!outputs/digg/gnn_preflight.md
+!outputs/digg/gnn_vs_xgb.png
 
 *.log
 *.tmp
