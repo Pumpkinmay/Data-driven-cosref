@@ -1,6 +1,8 @@
 # data-driven-cosref
 
-This repository connects a two-community count-threshold contagion model to reproducible synthetic experiments and an observational Digg cascade case study. The synthetic stage tests whether known parameters can be recovered and how simulated cascades respond to changes in cross-community coupling. The Digg stage audits real cascades, stress-tests the linear model, and evaluates calibrated prediction under strict story-level validation. The real-data results are predictive associations, not causal findings.
+This repository connects a two-community count-threshold contagion model to reproducible synthetic experiments and an observational Digg cascade case study. The synthetic stage tests whether known parameters can be recovered and how simulated cascades respond to changes in cross-community coupling. The Digg stage audits real cascades, stress-tests linear and tree models, and evaluates whether time-respecting GraphSAGE representations improve rare-node activation prediction. The real-data results are predictive associations, not causal findings.
+
+**Current release: v3.0.**
 
 ## 1. Project overview
 
@@ -8,14 +10,14 @@ The project is a standalone Python research companion to **“Community structur
 
 ### Version history
 
-**v1.0 — synthetic parameter recovery**
+**v3.0 — graph representation-learning stress test**
 
-- Synthetic cascades on empirical network topologies;
-- Logistic Regression parameter recovery;
-- Recovery of `a`, `b`, and `theta`;
-- Parameter-grid validation;
-- Identifiability diagnostics; and
-- Synthetic/model-based intervention experiments.
+- Retains the complete v1.0 synthetic and v2.0 Digg/XGBoost pipelines;
+- Adds a leakage-gated, time-respecting two-layer GraphSAGE baseline;
+- Reuses the saved story-level test split, inverse-sampling weights, and weighted metrics;
+- Uses train-story-only validation for early stopping;
+- Adds a `GNN+counts` fairness variant with `m_in` and `m_out`; and
+- Reports the negative result directly: neither GNN variant exceeds same-split XGB_full PR-AUC.
 
 **v2.0 — real cascades and calibrated prediction**
 
@@ -30,11 +32,20 @@ The project is a standalone Python research companion to **“Community structur
 - Platt probability calibration; and
 - Reproducibility tests and provenance documentation.
 
-The v2.0 work extends and retains the complete v1.0 synthetic pipeline. See [CHANGELOG.md](CHANGELOG.md) for the release-level summary.
+**v1.0 — synthetic parameter recovery**
+
+- Synthetic cascades on empirical network topologies;
+- Logistic Regression parameter recovery;
+- Recovery of `a`, `b`, and `theta`;
+- Parameter-grid validation;
+- Identifiability diagnostics; and
+- Synthetic/model-based intervention experiments.
+
+v3.0 retains both earlier stages without changing their reported results. See [CHANGELOG.md](CHANGELOG.md) for the release-level summary.
 
 ## 2. Research question
 
-The synthetic experiments ask whether within-community influence `a`, cross-community influence `b`, and normalized threshold `theta` can be recovered when their true values are known, and how a controlled change in `b` changes simulated diffusion. The Digg study asks a narrower observational question: do count exposures `m_in` and `m_out` add held-out predictive value beyond degree, elapsed time, user activity, and cascade popularity?
+The synthetic experiments ask whether within-community influence `a`, cross-community influence `b`, and normalized threshold `theta` can be recovered when their true values are known, and how a controlled change in `b` changes simulated diffusion. The Digg study asks two narrower observational questions: do count exposures `m_in` and `m_out` add held-out predictive value beyond degree, elapsed time, user activity, and cascade popularity, and does GraphSAGE message passing add ranking value beyond those handcrafted predictors?
 
 ## 3. COSREF count-threshold model
 
@@ -74,7 +85,9 @@ data-driven-cosref/
 │   ├── reproducibility.md
 │   ├── snap_input_provenance.md
 │   ├── digg_observational_case_study.md
-│   └── digg_xgboost_results.md
+│   ├── digg_xgboost_results.md
+│   ├── portfolio_project_brief.md
+│   └── digg_gnn_baseline.md
 ├── scripts/
 │   ├── cosref_core.py
 │   ├── parameter_recovery.py
@@ -93,6 +106,10 @@ data-driven-cosref/
 │   ├── validate_digg_xgboost.py
 │   ├── validate_digg_xgboost_group_cv.py
 │   ├── finalize_digg_xgboost.py
+│   ├── preflight_digg_gnn.py
+│   ├── run_digg_gnn_baseline.py
+│   ├── fit_digg_gnn.py
+│   ├── fit_digg_gnn_with_counts.py
 │   ├── run_all.py
 │   └── run_digg_pipeline.py
 ├── tests/                       # fast, data-free core checks
@@ -168,7 +185,32 @@ Platt XGB_full has the best log loss, ROC-AUC, and PR-AUC; Platt XGB_context has
 
 ![Held-out XGBoost SHAP associations](outputs/digg/xgb_shap_summary.png)
 
-## 14. Limitations
+## 14. GraphSAGE stress test
+
+v3.0 adds a two-layer mean-aggregation GraphSAGE baseline with hidden width 64. It uses time-respecting directed friendship snapshots, a learned community embedding, `degree`, `log_user_activity`, `log_cascade_size`, and `log_time`; the base GNN deliberately excludes `m_in` and `m_out`. A second `GNN+counts` variant adds those two strict-past handcrafted counts without changing the architecture, seed, split, loss, or evaluation metrics.
+
+Both variants reuse the saved outer split of 80 train and 20 test stories and evaluate the same 78,636 test rows with `sampling_weight`. For early stopping, the GNNs split the 80 training stories into 72 model-fit and 8 internal-validation stories using seed 42; test stories are evaluated only after checkpoint selection. The XGBoost ablation comparator fits the 80 outer-training stories, so the test set and metric definitions are identical while the effective fitting budget differs because only the GNN requires internal early stopping.
+
+Same-split held-out results are:
+
+| Model | Weighted log loss | Weighted Brier | Weighted ROC-AUC | Weighted PR-AUC |
+|---|---:|---:|---:|---:|
+| M0 | 0.001457248612 | 0.0001516466241 | 0.7062303748 | 0.0003183706267 |
+| M1 | 0.001454208096 | 0.0001516476799 | 0.7090371793 | 0.0003453067412 |
+| XGB_context | 0.001251234386 | 0.0001524467398 | 0.8989289792 | 0.005352667374 |
+| **XGB_full** | **0.001245344393** | 0.0001522431093 | **0.9018507826** | **0.009664626652** |
+| GNN | 0.001288529637 | 0.0001514369827 | 0.8825299028 | 0.003650674979 |
+| GNN+counts | 0.001292044649 | **0.0001514114732** | 0.8801162830 | 0.003398611789 |
+
+GraphSAGE loses to same-split XGB_full on the primary rare-event ranking metric: its weighted PR-AUC is lower by `0.006013951673` (62.23% relative). Adding `m_in` and `m_out` does not close the gap; GNN+counts PR-AUC falls by `0.00025206319` (6.90%) relative to the no-count GNN and remains 64.83% below XGB_full. GNN+counts has the lowest Brier point estimate in this table, but it is worse on log loss, ROC-AUC, and PR-AUC. Plausible limitations include the 100-cascade pilot size, weak observed graph signal, restricted features, and one-hour snapshot granularity; these are hypotheses, not established causes.
+
+The `0.0096646` XGB_full value above is the uncalibrated comparator on the exact saved GNN test split. It is distinct from the mean nested-fold calibrated final-model PR-AUC of `0.0117310` reported in Section 13. The final v3.0 real-data model therefore remains **Platt-calibrated XGB_full**; the GNNs are stress-test baselines, not replacements.
+
+![Same-split GNN and XGBoost comparison](outputs/digg/gnn_vs_xgb.png)
+
+See the [full GraphSAGE report](docs/digg_gnn_baseline.md), [preflight audit](outputs/digg/gnn_preflight.md), and [measured GNN metrics](outputs/digg/gnn_metrics.csv).
+
+## 15. Limitations
 
 - The synthetic recovery model matches the synthetic data generator; it does not establish robustness to arbitrary misspecification.
 - A deterministic SNAP converter is included, but the original source community IDs used for the historical formal inputs were not recovered. Existing prepared graphs are hash-audited and semantically reproducible from their current `0/1` mappings; see [the provenance audit](docs/snap_input_provenance.md).
@@ -176,10 +218,11 @@ Platt XGB_full has the best log loss, ROC-AUC, and PR-AUC; Platt XGB_context has
 - `beta` is fixed, community labels and topology are treated as observed, and within-cascade dependence is simplified.
 - Synthetic changes in `b` are controlled simulation interventions, not observed causal platform interventions.
 - The Digg analysis uses 100 pilot cascades, not all 3,553 cascades, and is sensitive to unobserved recommendation exposure, network incompleteness, and inverse-sampling assumptions.
+- The GNN comparison is one fixed GraphSAGE configuration on the 100-cascade pilot, not a broad neural-architecture search; GNN early stopping uses 8 of the 80 outer-training stories as internal validation.
 - SHAP and all Digg regression coefficients describe prediction or association, not causal effects.
 - Digg's `m_out` and implied `theta` estimates are unstable or outside the intended physical interpretation. Recovery claims for `a`, `b`, and `theta` come only from synthetic experiments.
 
-## 15. Reproduction instructions
+## 16. Reproduction instructions
 
 Python 3.9 or newer is supported; **Python 3.10 is recommended** for reproduction. Install the recorded runtime dependencies with:
 
@@ -268,6 +311,18 @@ python scripts/validate_digg_xgboost_group_cv.py
 python scripts/finalize_digg_xgboost.py
 ```
 
+### GraphSAGE baselines
+
+The GNN stage requires the local processed Digg files and the saved pilot split. Run the gated preflight first; it performs schema, snapshot-boundary, and one-percent forward/backward checks before formal training:
+
+```bash
+python scripts/preflight_digg_gnn.py
+python scripts/run_digg_gnn_baseline.py --overwrite
+python scripts/fit_digg_gnn_with_counts.py --overwrite
+```
+
+`run_digg_gnn_baseline.py` is the formal no-count experiment. `fit_digg_gnn_with_counts.py` changes only the feature condition by adding strict-past `m_in` and `m_out`. Both use the saved outer story split, `sampling_weight`, seed 42, and train-story-only early stopping. The older `fit_digg_gnn.py` is retained as the initial implementation and diagnostic entry point; the staged v3.0 results come from the gated commands above.
+
 ### Figure generation
 
 Figures are generated by the corresponding experiment scripts above; there is no separate figure-only command. The complete Digg order can be previewed or run with the checked-in orchestrator:
@@ -283,7 +338,7 @@ The complete Digg pipeline requires the two local raw files and is substantially
 
 Formal seeds, principal parameters, input SHA-256 values, and key output names are recorded in [the reproducibility record](docs/reproducibility.md). Synthetic prepared-input hashes and community sizes are recorded separately in [the SNAP provenance audit](docs/snap_input_provenance.md).
 
-## 16. Data availability and citation
+## 17. Data availability and citation
 
 Synthetic network inputs are obtained separately from SNAP and retain their upstream terms. Digg raw data are not included; download the [official Digg 2009 Figshare archive](https://figshare.com/articles/dataset/Digg_2009_social_news_votes_and_graph/2062467), place its two files under `data/raw/digg2009/`, and follow the license and citation instructions in [data/README.md](data/README.md). Cite the underlying study as [Hogg and Lerman (2012), “Social Dynamics of Digg”](https://doi.org/10.1140/epjds5).
 
