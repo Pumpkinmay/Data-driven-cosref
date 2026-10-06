@@ -1,14 +1,22 @@
 # data-driven-cosref
 
-This repository connects a two-community count-threshold contagion model to reproducible synthetic experiments and an observational Digg cascade case study. The synthetic stage tests whether known parameters can be recovered and how simulated cascades respond to changes in cross-community coupling. The Digg stage audits real cascades, stress-tests linear and tree models, and evaluates whether time-respecting GraphSAGE representations improve rare-node activation prediction. The real-data results are predictive associations, not causal findings.
+This repository connects a two-community count-threshold contagion model to reproducible synthetic experiments, an observational Digg cascade case study, and an implicit-feedback recommendation extension. The synthetic stage tests whether known parameters can be recovered and how simulated cascades respond to changes in cross-community coupling. The Digg diffusion stage stress-tests linear, tree, and GraphSAGE predictors; the recommendation stage evaluates time-respecting next-story ranking with sampled candidates. All real-data results are predictive associations or offline ranking results, not causal findings or online-effect estimates.
 
-**Current release: v3.0.**
+**Current release: v3.1.**
 
 ## 1. Project overview
 
 The project is a standalone Python research companion to **“Community structure-regulation coupling reveals optimal information diffusion,”** *Nature Communications* **17**, 4879 (2026) ([DOI: 10.1038/s41467-026-73665-1](https://doi.org/10.1038/s41467-026-73665-1)). Xiaojie Chen and Meiling Xie contributed equally to the associated publication. This repository does not contain, modify, or redistribute the paper's original C++ simulation code. Public outputs are deliberately limited to compact summaries, reports, and figures; raw and row-level data remain local.
 
 ### Version history
+
+**v3.1 — Digg implicit-feedback recommendation**
+
+- Popularity, BPR-MF, and DeepFM baselines;
+- Temporal leave-last-two-out evaluation;
+- Time-respecting sampled non-interactions;
+- Recall, NDCG, HitRate, MRR, and sampled AUC evaluation; and
+- DeepFM ID/context/community feature ablation.
 
 **v3.0 — graph representation-learning stress test**
 
@@ -41,11 +49,11 @@ The project is a standalone Python research companion to **“Community structur
 - Identifiability diagnostics; and
 - Synthetic/model-based intervention experiments.
 
-v3.0 retains both earlier stages without changing their reported results. See [CHANGELOG.md](CHANGELOG.md) for the release-level summary.
+v3.1 extends v3.0 without changing the reported synthetic, diffusion, XGBoost, or GraphSAGE results. See [CHANGELOG.md](CHANGELOG.md) for the release-level summary.
 
 ## 2. Research question
 
-The synthetic experiments ask whether within-community influence `a`, cross-community influence `b`, and normalized threshold `theta` can be recovered when their true values are known, and how a controlled change in `b` changes simulated diffusion. The Digg study asks two narrower observational questions: do count exposures `m_in` and `m_out` add held-out predictive value beyond degree, elapsed time, user activity, and cascade popularity, and does GraphSAGE message passing add ranking value beyond those handcrafted predictors?
+The synthetic experiments ask whether within-community influence `a`, cross-community influence `b`, and normalized threshold `theta` can be recovered when their true values are known, and how a controlled change in `b` changes simulated diffusion. The Digg diffusion study asks whether count exposures and graph message passing add held-out predictive value. The recommendation extension asks whether temporal context and baseline community labels improve next-story ranking beyond popularity, matrix factorization, and ID-only DeepFM.
 
 ## 3. COSREF count-threshold model
 
@@ -87,7 +95,9 @@ data-driven-cosref/
 │   ├── digg_observational_case_study.md
 │   ├── digg_xgboost_results.md
 │   ├── portfolio_project_brief.md
-│   └── digg_gnn_baseline.md
+│   ├── digg_gnn_baseline.md
+│   ├── recommendation_protocol.md
+│   └── recommendation_results.md
 ├── scripts/
 │   ├── cosref_core.py
 │   ├── parameter_recovery.py
@@ -110,6 +120,8 @@ data-driven-cosref/
 │   ├── run_digg_gnn_baseline.py
 │   ├── fit_digg_gnn.py
 │   ├── fit_digg_gnn_with_counts.py
+│   ├── recommendation_core.py
+│   ├── run_digg_recommendation.py
 │   ├── run_all.py
 │   └── run_digg_pipeline.py
 ├── tests/                       # fast, data-free core checks
@@ -210,7 +222,35 @@ The `0.0096646` XGB_full value above is the uncalibrated comparator on the exact
 
 See the [full GraphSAGE report](docs/digg_gnn_baseline.md), [preflight audit](outputs/digg/gnn_preflight.md), and [measured GNN metrics](outputs/digg/gnn_metrics.csv).
 
-## 15. Limitations
+## 15. Digg implicit-feedback recommendation
+
+The v3.1 extension ranks a user's next voted story from behavior available strictly before the target time. It retains users with at least five votes and uses leave-last-two-out: earlier interactions are training data, the penultimate interaction is validation, and the last interaction is test. Each evaluable target is ranked against 99 shared sampled non-interactions drawn from stories that had already appeared. This is a **sampled-candidate offline evaluation**, not full-catalog ranking or CTR prediction.
+
+The final recommendation model is **DeepFM_context**, which uses training-mapped user/story IDs plus strict-past user activity, strict-past training-story popularity, UTC hour, and relative day. Its warm-start test results are copied from [the recommendation metrics CSV](outputs/recommendation/model_metrics.csv):
+
+| Model | NDCG@10 | Recall@10 | MRR | AUC |
+|---|---:|---:|---:|---:|
+| Popularity | 0.108374 | 0.215860 | 0.097903 | 0.526530 |
+| BPR-MF | 0.662113 | 0.905530 | 0.589556 | 0.960892 |
+| DeepFM_ID | 0.534932 | 0.790023 | 0.466476 | 0.932601 |
+| **DeepFM_context** | **0.727087** | **0.928401** | **0.665968** | **0.970299** |
+| DeepFM_full | 0.720863 | 0.927846 | 0.658026 | 0.969797 |
+
+Additional calculated metrics are:
+
+| Model | NDCG@20 | Recall@20 | HitRate@10 |
+|---|---:|---:|---:|
+| Popularity | 0.143530 | 0.356178 | 0.215860 |
+| BPR-MF | 0.675227 | 0.956600 | 0.905530 |
+| DeepFM_ID | 0.564522 | 0.905854 | 0.790023 |
+| **DeepFM_context** | **0.737165** | **0.967781** | **0.928401** |
+| DeepFM_full | 0.731036 | 0.967596 | 0.927846 |
+
+DeepFM_context exceeds DeepFM_ID, showing that the measured dynamic context features are useful for this offline ranking task. DeepFM_full adds the pre-period baseline community label but is slightly below DeepFM_context, so this experiment does not support an additional recommendation gain from that feature. This does **not** negate the value of community structure for diffusion mechanisms; it answers a different predictive task with a different target and candidate universe. DIN and other recommendation models are not implemented.
+
+There are no impression logs. Sampled non-interactions are not confirmed negative feedback, each reported test case contains one positive and 99 sampled non-interactions, and cold-item rate is 0% in this warm-start evaluation. The results do not establish online lift and must not be compared numerically with v2.0 diffusion PR-AUC. See the [protocol](docs/recommendation_protocol.md), [results report](docs/recommendation_results.md), and [candidate manifest](outputs/recommendation/candidate_manifest.json).
+
+## 16. Limitations
 
 - The synthetic recovery model matches the synthetic data generator; it does not establish robustness to arbitrary misspecification.
 - A deterministic SNAP converter is included, but the original source community IDs used for the historical formal inputs were not recovered. Existing prepared graphs are hash-audited and semantically reproducible from their current `0/1` mappings; see [the provenance audit](docs/snap_input_provenance.md).
@@ -221,8 +261,9 @@ See the [full GraphSAGE report](docs/digg_gnn_baseline.md), [preflight audit](ou
 - The GNN comparison is one fixed GraphSAGE configuration on the 100-cascade pilot, not a broad neural-architecture search; GNN early stopping uses 8 of the 80 outer-training stories as internal validation.
 - SHAP and all Digg regression coefficients describe prediction or association, not causal effects.
 - Digg's `m_out` and implied `theta` estimates are unstable or outside the intended physical interpretation. Recovery claims for `a`, `b`, and `theta` come only from synthetic experiments.
+- The recommendation study is a warm-start, 100-candidate offline evaluation. It has no impression logs, does not treat sampled non-interactions as true negatives, and does not estimate online CTR or full-catalog performance.
 
-## 16. Reproduction instructions
+## 17. Reproduction instructions
 
 Python 3.9 or newer is supported; **Python 3.10 is recommended** for reproduction. Install the recorded runtime dependencies with:
 
@@ -323,6 +364,17 @@ python scripts/fit_digg_gnn_with_counts.py --overwrite
 
 `run_digg_gnn_baseline.py` is the formal no-count experiment. `fit_digg_gnn_with_counts.py` changes only the feature condition by adding strict-past `m_in` and `m_out`. Both use the saved outer story split, `sampling_weight`, seed 42, and train-story-only early stopping. The older `fit_digg_gnn.py` is retained as the initial implementation and diagnostic entry point; the staged v3.0 results come from the gated commands above.
 
+### Recommendation baselines
+
+The recommendation pipeline requires the local cleaned votes and baseline community file. Run a small end-to-end smoke check before the full experiment:
+
+```bash
+python scripts/run_digg_recommendation.py --smoke --device cpu
+python scripts/run_digg_recommendation.py --device cpu
+```
+
+The full command trains Popularity, BPR-MF, and the three requested DeepFM ablations, performs validation-only model selection, evaluates the final models once on the warm-start test candidate set, and writes only compact public summaries under `outputs/recommendation/`. Use `--overwrite` only when intentionally regenerating those v3.1 outputs from the recorded inputs.
+
 ### Figure generation
 
 Figures are generated by the corresponding experiment scripts above; there is no separate figure-only command. The complete Digg order can be previewed or run with the checked-in orchestrator:
@@ -338,7 +390,7 @@ The complete Digg pipeline requires the two local raw files and is substantially
 
 Formal seeds, principal parameters, input SHA-256 values, and key output names are recorded in [the reproducibility record](docs/reproducibility.md). Synthetic prepared-input hashes and community sizes are recorded separately in [the SNAP provenance audit](docs/snap_input_provenance.md).
 
-## 17. Data availability and citation
+## 18. Data availability and citation
 
 Synthetic network inputs are obtained separately from SNAP and retain their upstream terms. Digg raw data are not included; download the [official Digg 2009 Figshare archive](https://figshare.com/articles/dataset/Digg_2009_social_news_votes_and_graph/2062467), place its two files under `data/raw/digg2009/`, and follow the license and citation instructions in [data/README.md](data/README.md). Cite the underlying study as [Hogg and Lerman (2012), “Social Dynamics of Digg”](https://doi.org/10.1140/epjds5).
 

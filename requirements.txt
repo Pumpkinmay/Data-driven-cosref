@@ -9,3 +9,5 @@ shap>=0.45,<1
 # On macOS, XGBoost/OpenMP workflows may also require: brew install libomp
 torch>=2.2,<3
 torch_geometric>=2.5,<3
+# v3.1 recommendation baselines (Popularity, BPR-MF, and DeepFM) use the
+# existing NumPy/pandas/PyTorch stack; no additional recommender framework is required.

@@ -39,6 +39,9 @@ data/community_*.csv
 *.parquet
 *.pkl
 *.joblib
+*.pt
+*.pth
+*.ckpt
 
 # Large node-level or temporary outputs
 outputs/exposure_table*
@@ -46,6 +49,9 @@ outputs/smoke/
 outputs/tmp/
 outputs/*.npy
 outputs/*.npz
+outputs/recommendation/*candidate_rows*
+outputs/recommendation/*user_level*
+outputs/recommendation/*interactions*
 
 # Keep local Digg provenance, publish only the curated final subset.
 outputs/digg/*

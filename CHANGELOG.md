@@ -1,5 +1,32 @@
 # Changelog
 
+## v3.1
+
+v3.1 adds a Digg implicit-feedback recommendation task without changing the previously reported diffusion, XGBoost, or GraphSAGE outputs.
+
+### Added
+
+- Popularity and BPR-MF baselines.
+- DeepFM_ID, DeepFM_context, and DeepFM_full feature ablations.
+- A temporal leave-last-two-out split for users with at least five votes.
+- Time-respecting shared candidate sampling with 99 sampled non-interactions per eligible validation/test target.
+- Recall@10/20, NDCG@10/20, HitRate@10, MRR, sampled AUC, parameter counts, and measured training/inference time.
+- User-level bootstrap intervals, paired model-delta intervals, candidate checksums, leakage documentation, and data-free unit tests.
+
+### Final recommendation model
+
+DeepFM_context is the selected v3.1 recommendation model:
+
+| Model | NDCG@10 | Recall@10 | MRR | AUC |
+|---|---:|---:|---:|---:|
+| **DeepFM_context** | **0.727087** | **0.928401** | **0.665968** | **0.970299** |
+
+DeepFM_context exceeds DeepFM_ID, while DeepFM_full is slightly lower than DeepFM_context. The result supports the value of the measured dynamic context features but does not support an additional recommendation gain from the baseline community feature in this experiment. It does not negate the role of community structure in the separate diffusion task. DIN is not implemented.
+
+### Evaluation boundary
+
+This is a warm-start, sampled-candidate offline evaluation, not full-catalog ranking or CTR prediction. Each evaluated target has one positive and 99 sampled non-interactions. Digg has no impression logs, sampled non-interactions are not confirmed negative feedback, cold-item rate is 0%, and the results do not establish online benefit. Recommendation metrics are not directly comparable with v2.0 diffusion PR-AUC.
+
 ## v3.0
 
 v3.0 retains the complete v1.0 synthetic and v2.0 observational XGBoost pipelines and adds a leakage-gated graph representation-learning stress test.

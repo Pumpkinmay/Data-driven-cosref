@@ -1,0 +1,17 @@
+{
+  "candidate_rule": "story first appeared in complete cleaned votes strictly before target; exclude user interactions strictly before target; warm train-mapped items only",
+  "communities_sha256": "1c17e3714a0eedd0aaec2795eb60c4e6cac46c337dafde1fa4ee943c6d104325",
+  "minimum_user_interactions": 5,
+  "negative_candidates_per_event": 99,
+  "seed": 42,
+  "split": "leave-last-two-out after stable (user_id, timestamp, story_id, input_order) sorting",
+  "test_candidate_sha256": "6084b9c78ae22f9af02afefd337aaed2564be39c7469a5ab375ed988b50dd85b",
+  "test_events": 64931,
+  "test_excluded_insufficient_negative_pool": 8,
+  "test_source_warm_events": 64939,
+  "validation_candidate_sha256": "a1c6b6c8dd0c2ab35b82c8853e054d6fc2d5dec746649385e19b3a34d89078d8",
+  "validation_events": 64930,
+  "validation_excluded_insufficient_negative_pool": 9,
+  "validation_source_warm_events": 64939,
+  "votes_sha256": "65212ab6bfe83bac6e5d10caadbb92b5d1372cfdad7987094e6040f6d7040a25"
+}
